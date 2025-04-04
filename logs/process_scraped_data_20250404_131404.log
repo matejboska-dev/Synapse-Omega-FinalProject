@@ -1,0 +1,5 @@
+2025-04-04 13:14:04,797 - INFO - starting scraped data processing
+2025-04-04 13:14:04,798 - INFO - found latest scraped data file: /home/mattheww/Desktop/GitHub-Repos/Synapse_Omega_v3/data/scraped/articles_20250404_124746.json
+2025-04-04 13:14:04,802 - INFO - loaded 15 articles from /home/mattheww/Desktop/GitHub-Repos/Synapse_Omega_v3/data/scraped/articles_20250404_124746.json
+2025-04-04 13:14:04,804 - ERROR - error preprocessing texts: No module named 'data'
+2025-04-04 13:14:04,804 - ERROR - text preprocessing failed, exiting

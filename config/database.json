@@ -1,0 +1,7 @@
+{
+    "server": "193.85.203.188",
+    "database": "boska",
+    "username": "boska",
+    "password": "123456",
+    "driver": "{ODBC Driver 17 for SQL Server}"
+}

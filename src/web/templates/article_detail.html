@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.Title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Domů</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('articles') }}">Články</a></li>
+                <li class="breadcrumb-item active">{{ article.Title|truncate(30) }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <article>
+            <h1 class="mb-3">{{ article.Title }}</h1>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <span class="badge bg-secondary source-badge">{{ article.Source }}</span>
+                    {% if article.Category %}
+                    <span class="badge bg-primary category-badge">{{ article.Category }}</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <span class="text-muted">
+                        <i class="far fa-calendar-alt me-1"></i>{{ article.PublishDate }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if article.ArticleUrl %}
+            <div class="mb-4">
+                <a href="{{ article.ArticleUrl }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>Zobrazit původní článek
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p style="white-space: pre-line;">{{ article.Content }}</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-file-alt me-1"></i>{{ article.WordCount }} slov</span>
+                        <span><i class="fas fa-ruler me-1"></i>{{ article.ArticleLength }} znaků</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- AI Analysis -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Analýza</h5>
+            </div>
+            <div class="card-body p-0">
+                <!-- Sentiment Analysis with Gauge -->
+                {% if article.sentiment %}
+                <div class="sentiment-gauge-container">
+                    <div class="sentiment-gauge-title">Sentiment analýza</div>
+                    
+                    <div class="gauge-container">
+                        <div class="gauge-bg">
+                            <div class="gauge-half-circle"></div>
+                            <div class="gauge-mask"></div>
+                        </div>
+                        
+                        <div class="gauge-value">
+                            <div class="sentiment-score" data-score="{{ article.sentiment_score|default(5.0) }}">
+                                {{ "%.1f"|format(article.sentiment_score|default(5.0)) }}
+                            </div>
+                            <div class="gauge-label-text">
+                                {% if article.sentiment == 'positive' %}
+                                    Pozitivní
+                                {% elif article.sentiment == 'negative' %}
+                                    Negativní
+                                {% else %}
+                                    Neutrální
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="gauge-needle"></div>
+                        
+                        <div class="gauge-labels">
+                            <div class="gauge-label">Velmi negativní</div>
+                            <div class="gauge-label">Neutrální</div>
+                            <div class="gauge-label">Velmi pozitivní</div>
+                        </div>
+                    </div>
+                    
+                    <div class="sentiment-explanation">
+                        <div class="explanation-title {% if article.sentiment == 'positive' %}positive{% elif article.sentiment == 'negative' %}negative{% else %}neutral{% endif %}">
+                            {% if article.sentiment == 'positive' %}
+                                Pozitivní hodnocení článku
+                            {% elif article.sentiment == 'negative' %}
+                                Negativní hodnocení článku
+                            {% else %}
+                                Neutrální hodnocení článku
+                            {% endif %}
+                        </div>
+                        
+                        <div class="score-explanation">
+                            {{ article.sentiment_description|default('') }}
+                            <br><br>
+                            {{ article.sentiment_reason|default('') }}
+                        </div>
+                        
+                        <div class="word-lists">
+                            {% if article.positive_words %}
+                            <div class="word-list">
+                                <div class="word-list-title positive">Pozitivní výrazy</div>
+                                <div class="word-tags">
+                                    {% for word in article.positive_words %}
+                                    <span class="word-tag positive">{{ word }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if article.negative_words %}
+                            <div class="word-list">
+                                <div class="word-list-title negative">Negativní výrazy</div>
+                                <div class="word-tags">
+                                    {% for word in article.negative_words %}
+                                    <span class="word-tag negative">{{ word }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="sentiment-additional">
+                        <div class="sentiment-stat">
+                            <div class="stat-value">{{ article.sentiment_features.positive_word_count|default(0) }}</div>
+                            <div class="stat-label">Pozitivních slov</div>
+                        </div>
+                        
+                        <div class="sentiment-stat">
+                            <div class="stat-value">{{ article.sentiment_features.negative_word_count|default(0) }}</div>
+                            <div class="stat-label">Negativních slov</div>
+                        </div>
+                        
+                        <div class="sentiment-stat">
+                            <div class="stat-value">{{ "%.2f"|format(article.sentiment_features.sentiment_ratio|default(1.0)) }}</div>
+                            <div class="stat-label">Poměr sentimentu</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Category Prediction -->
+                {% if article.predicted_category %}
+                <div class="p-4">
+                    <h6><i class="fas fa-tags me-2"></i>Klasifikace kategorie</h6>
+                    <div class="mt-2">
+                        <span class="badge bg-primary p-2">{{ article.predicted_category }}</span>
+                        {% if article.Category and article.predicted_category != article.Category %}
+                        <div class="mt-2 small">
+                            <strong>Poznámka:</strong> Předpovězená kategorie se liší od původní kategorie ({{ article.Category }})
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Article Chatbot -->
+        <div class="card mb-4 chatbot-card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-comment-dots me-2 bot-avatar"></i>Zeptejte se na tento článek
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="article-chat-container" class="article-chat-container mb-3">
+                    <div class="system-message p-2 mb-2 rounded">
+                        <div class="message-content">
+                            <div class="message-bubble">
+                                <p>Můžete se mě zeptat na analýzu tohoto článku. Například:</p>
+                                <ul class="mb-0">
+                                    <li>Proč je tento článek hodnocen jako {{ article.sentiment }}?</li>
+                                    <li>Jaká klíčová slova určují sentiment článku?</li>
+                                    <li>Proč byl článek zařazen do kategorie {{ article.predicted_category }}?</li>
+                                    <li>Jaké je politické zaměření článku?</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="article-chat-form" class="d-flex">
+                    <input type="text" id="article-question" class="form-control me-2" placeholder="Zeptejte se na článek..." required>
+                    <input type="hidden" id="article-id" value="{{ article.Id }}">
+                    <button type="submit" class="btn btn-info text-white send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Metadata -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Metadata článku</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>ID</span>
+                        <span class="badge bg-secondary">{{ article.Id }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Zdroj</span>
+                        <span class="badge bg-secondary">{{ article.Source }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Datum publikace</span>
+                        <span>{{ article.PublishDate }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Kategorie</span>
+                        <span class="badge bg-primary">{{ article.Category if article.Category else 'Bez kategorie' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Počet slov</span>
+                        <span>{{ article.WordCount }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Počet znaků</span>
+                        <span>{{ article.ArticleLength }}</span>
+                    </li>
+                    {% if article.ScrapedDate %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Datum stažení</span>
+                        <span>{{ article.ScrapedDate }}</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('article-chat-container');
+    const chatForm = document.getElementById('article-chat-form');
+    const questionInput = document.getElementById('article-question');
+    const articleId = document.getElementById('article-id').value;
+    const sendButton = document.querySelector('.send-button');
+    
+    // Function to simulate typing effect
+    function typeMessage(element, text, index = 0, callback) {
+        if (index < text.length) {
+            // Handle HTML tags
+            if (text.substring(index).startsWith('<')) {
+                // Find the end of the tag
+                const endTagIndex = text.indexOf('>', index);
+                if (endTagIndex !== -1) {
+                    element.innerHTML += text.substring(index, endTagIndex + 1);
+                    index = endTagIndex + 1;
+                }
+            } else {
+                element.innerHTML += text.charAt(index);
+                index++;
+            }
+            
+            // Random delay between characters to simulate human typing
+            const delay = Math.random() * 10 + 20; // 20-30ms
+            setTimeout(() => typeMessage(element, text, index, callback), delay);
+        } else {
+            // Typing complete
+            if (callback) callback();
+        }
+    }
+    
+    // Function to add message to chat
+    function addMessage(content, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'user-message p-2 mb-2 rounded bg-primary text-white text-end' : 'bot-message p-2 mb-2 rounded bg-light';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.className = 'message-bubble';
+        
+        if (isUser) {
+            // For user messages, just add the content directly
+            messageBubble.textContent = content;
+            messageContent.appendChild(messageBubble);
+            messageDiv.appendChild(messageContent);
+            chatContainer.appendChild(messageDiv);
+        } else {
+            // For bot messages, add empty bubble first, then use typing effect
+            messageContent.appendChild(messageBubble);
+            messageDiv.appendChild(messageContent);
+            chatContainer.appendChild(messageDiv);
+            
+            // Start typing effect after a short delay
+            setTimeout(() => {
+                if (content.includes('<') && content.includes('>')) {
+                    // Handle HTML content with typing effect
+                    typeMessage(messageBubble, content);
+                } else {
+                    // Simple text
+                    typeMessage(messageBubble, content);
+                }
+            }, 500);
+        }
+        
+        // Scroll to bottom with animation
+        chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Create typing indicator with animated dots
+    function createTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'bot-message p-2 mb-2 rounded bg-light typing-indicator';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.className = 'message-bubble typing-bubble';
+        messageBubble.innerHTML = '<span class="dot dot1"></span><span class="dot dot2"></span><span class="dot dot3"></span>';
+        
+        messageContent.appendChild(messageBubble);
+        typingDiv.appendChild(messageContent);
+        
+        return typingDiv;
+    }
+    
+    // Function to show the avatar is "thinking" 
+    function showBotThinking() {
+        const avatar = document.querySelector('.bot-avatar');
+        avatar.classList.add('thinking');
+    }
+    
+    // Function to stop the avatar "thinking" animation
+    function stopBotThinking() {
+        const avatar = document.querySelector('.bot-avatar');
+        avatar.classList.remove('thinking');
+    }
+    
+    // Function to send message to server
+    async function sendMessage(message) {
+        // Add user message
+        addMessage(message, true);
+        
+        // Disable input and button during processing
+        questionInput.disabled = true;
+        sendButton.disabled = true;
+        
+        // Show thinking animation
+        showBotThinking();
+        
+        // Show typing indicator
+        const typingIndicator = createTypingIndicator();
+        chatContainer.appendChild(typingIndicator);
+        chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+        });
+        
+        try {
+            // Add a deliberate delay to simulate thinking (only in development)
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const response = await fetch('/api/article_chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    message: message,
+                    article_id: articleId
+                }),
+            });
+            
+            const data = await response.json();
+            
+            // Remove typing indicator
+            chatContainer.removeChild(typingIndicator);
+            stopBotThinking();
+            
+            // Add bot response with typing effect
+            addMessage(data.response);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            
+            // Remove typing indicator
+            chatContainer.removeChild(typingIndicator);
+            stopBotThinking();
+            
+            // Add error message
+            addMessage('Omlouvám se, ale něco se pokazilo. Zkuste to prosím znovu.');
+        } finally {
+            // Re-enable input and button
+            questionInput.disabled = false;
+            sendButton.disabled = false;
+            questionInput.focus();
+        }
+    }
+    
+    // Handle form submission with button animation
+    chatForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const message = questionInput.value.trim();
+        
+        if (message) {
+            // Button press animation
+            sendButton.classList.add('send-button-pressed');
+            setTimeout(() => {
+                sendButton.classList.remove('send-button-pressed');
+            }, 150);
+            
+            sendMessage(message);
+            questionInput.value = '';
+        }
+    });
+    
+    // Animate the chat card on page load
+    const chatbotCard = document.querySelector('.chatbot-card');
+    setTimeout(() => {
+        chatbotCard.classList.add('chatbot-card-animated');
+    }, 300);
+});
+</script>
+
+<style>
+/* Chatbot container styling */
+.article-chat-container {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    scroll-behavior: smooth;
+}
+
+/* Message styling */
+.user-message {
+    margin-left: 20%;
+    border-radius: 18px 18px 0 18px !important;
+    position: relative;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.bot-message {
+    margin-right: 20%;
+    border-radius: 18px 18px 18px 0 !important;
+    position: relative;
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.system-message {
+    margin-right: 20%;
+    border-radius: 18px !important;
+    background-color: #e9ecef;
+    border-left: 4px solid #17a2b8;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Message bubble for neater appearance */
+.message-bubble {
+    padding: 2px 0;
+    word-break: break-word;
+}
+
+/* Animation for user messages */
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Animation for bot messages */
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Typing indicator animation */
+.typing-bubble {
+    display: flex;
+    align-items: center;
+    height: 30px;
+}
+
+.dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #17a2b8;
+    margin-right: 4px;
+}
+
+.dot1 { animation: bounce 1s infinite; }
+.dot2 { animation: bounce 1s infinite 0.2s; }
+.dot3 { animation: bounce 1s infinite 0.4s; }
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Send button animations */
+.send-button {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.send-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.send-button-pressed {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Avatar animations */
+.bot-avatar {
+    transition: transform 0.3s ease;
+}
+
+.thinking {
+    animation: thinking 1.5s ease-in-out infinite;
+}
+
+@keyframes thinking {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* Chatbot card animation */
+.chatbot-card {
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.5s ease-out;
+}
+
+.chatbot-card-animated {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Improve form styling */
+#article-chat-form {
+    position: relative;
+}
+
+#article-question {
+    border-radius: 20px;
+    padding-right: 50px;
+    border: 1px solid #ced4da;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+}
+
+#article-question:focus {
+    box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.25);
+    border-color: #17a2b8;
+}
+
+.send-button {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

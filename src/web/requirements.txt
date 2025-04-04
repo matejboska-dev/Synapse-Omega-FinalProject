@@ -1,0 +1,15 @@
+pyodbc
+pandas
+matplotlib
+seaborn
+numpy
+wordcloud
+nltk
+scikit-learn
+tqdm
+pillow
+flask
+requests
+beautifulsoup4
+feedparser
+flask_cors

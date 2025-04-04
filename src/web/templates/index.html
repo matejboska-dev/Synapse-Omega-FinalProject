@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Synapse - Domů{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-4">Dashboard zpravodajské analýzy</h1>
+        <p class="lead">Analýza českých zpravodajských článků s využitím strojového učení</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <p>
+            <span class="badge bg-info">Data načtena: {{ stats.loaded_date.strftime('%Y-%m-%d %H:%M') if stats.loaded_date else 'N/A' }}</span>
+        </p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-newspaper me-2"></i>Celkem článků</h5>
+                <p class="display-4">{{ stats.total_articles }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-globe me-2"></i>Zdrojů</h5>
+                <p class="display-4">{{ stats.sources }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-tags me-2"></i>Kategorií</h5>
+                <p class="display-4">{{ stats.categories }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Nejnovější články</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for article in stats.newest_articles %}
+                    <a href="{{ url_for('article_detail', article_id=article.Id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ article.Title }}</h5>
+                            <small>{{ article.PublishDate }}</small>
+                        </div>
+                        <p class="mb-1">
+                            <span class="badge bg-secondary">{{ article.Source }}</span>
+                            {% if article.Category %}
+                            <span class="badge bg-primary">{{ article.Category }}</span>
+                            {% endif %}
+                        </p>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('articles') }}" class="btn btn-primary">Zobrazit všechny články</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Nejčastější zdroje</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for source, count in stats.top_sources.items() %}
+                            <a href="{{ url_for('articles', source=source) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                {{ source }}
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('sources') }}" class="btn btn-success">Zobrazit všechny zdroje</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Nejčastější kategorie</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for category, count in stats.top_categories.items() %}
+                            <a href="{{ url_for('articles', category=category) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                {{ category if category else 'Bez kategorie' }}
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('categories') }}" class="btn btn-info">Zobrazit všechny kategorie</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Funkce AI analýzy</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-tags me-2"></i>Klasifikace kategorií</h5>
+                                <p class="card-text">Náš AI model automaticky klasifikuje články do předdefinovaných kategorií s vysokou přesností.</p>
+                                <a href="{{ url_for('categories') }}" class="btn btn-primary">Prozkoumat kategorie</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-smile me-2"></i>Analýza sentimentu</h5>
+                                <p class="card-text">Náš analyzátor sentimentu identifikuje, zda má článek pozitivní, negativní nebo neutrální tón.</p>
+                                <a href="{{ url_for('analyze') }}" class="btn btn-primary">Vyzkoušet analyzátor</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

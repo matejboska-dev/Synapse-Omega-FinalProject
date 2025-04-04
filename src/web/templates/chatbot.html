@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Zpravodajský Analyzátor - Chatbot{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">AI Chatbot</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Konverzace</h5>
+            </div>
+            <div class="card-body">
+                <div id="chat-container" class="chat-container mb-3">
+                    <div class="system-message p-2 mb-2 rounded">
+                        <div class="message-content">
+                            <p>Vítejte v AI chatbotovi pro analýzu zpráv. Můžete se mě ptát na analýzu článků, vysvětlení sentimentu, kategorie a další otázky o české zpravodajské scéně.</p>
+                        </div>
+                    </div>
+                    <!-- Chat messages will be appended here -->
+                </div>
+                
+                <form id="chat-form" class="d-flex">
+                    <input type="text" id="user-input" class="form-control me-2" placeholder="Napište zprávu..." required>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Navrhované otázky</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action suggested-question">
+                        Jak určuješ sentiment článku?
+                    </button>
+                    <button class="list-group-item list-group-item-action suggested-question">
+                        Proč si myslíš, že tento článek je negativní?
+                    </button>
+                    <button class="list-group-item list-group-item-action suggested-question">
+                        Jaký je rozdíl mezi kategoriemi zpravodajství?
+                    </button>
+                    <button class="list-group-item list-group-item-action suggested-question">
+                        Které zdroje mají nejvíce negativních článků?
+                    </button>
+                    <button class="list-group-item list-group-item-action suggested-question">
+                        Jak funguje klasifikace kategorií?
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>O Chatbotovi</h5>
+            </div>
+            <div class="card-body">
+                <p>Tento chatbot využívá vylepšené modely strojového učení k analýze českých zpráv. Dokáže vysvětlit, proč byl článek klasifikován určitým způsobem a poskytnout vhled do klasifikačních algoritmů.</p>
+                <p>Můžete se ptát na:</p>
+                <ul>
+                    <li>Vysvětlení sentimentu článků</li>
+                    <li>Detaily o klasifikaci kategorií</li>
+                    <li>Statistiky o zpravodajských zdrojích</li>
+                    <li>Fungování modelů strojového učení</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chat-container');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const suggestedQuestions = document.querySelectorAll('.suggested-question');
+    
+    // Function to add message to chat
+    function addMessage(content, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'user-message p-2 mb-2 rounded bg-primary text-white text-end' : 'bot-message p-2 mb-2 rounded bg-light';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        // Handle HTML content if provided
+        if (content.includes('<') && content.includes('>')) {
+            messageContent.innerHTML = content;
+        } else {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = content;
+            messageContent.appendChild(paragraph);
+        }
+        
+        messageDiv.appendChild(messageContent);
+        chatContainer.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Function to send message to server
+    async function sendMessage(message) {
+        addMessage(message, true);
+        
+        // Show typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'bot-message p-2 mb-2 rounded bg-light typing-indicator';
+        typingIndicator.innerHTML = '<div class="message-content"><p>Bot píše...</p></div>';
+        chatContainer.appendChild(typingIndicator);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        try {
+            const response = await fetch('/api/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message }),
+            });
+            
+            const data = await response.json();
+            
+            // Remove typing indicator
+            chatContainer.removeChild(typingIndicator);
+            
+            // Add bot response
+            addMessage(data.response);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            
+            // Remove typing indicator
+            chatContainer.removeChild(typingIndicator);
+            
+            // Add error message
+            addMessage('Omlouvám se, ale něco se pokazilo. Zkuste to prosím znovu.');
+        }
+    }
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const message = userInput.value.trim();
+        
+        if (message) {
+            sendMessage(message);
+            userInput.value = '';
+        }
+    });
+    
+    // Handle suggested questions
+    suggestedQuestions.forEach(question => {
+        question.addEventListener('click', function() {
+            const message = this.textContent.trim();
+            sendMessage(message);
+        });
+    });
+});
+</script>
+
+<style>
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+.user-message {
+    margin-left: 20%;
+    border-radius: 15px 15px 0 15px !important;
+}
+
+.bot-message, .system-message {
+    margin-right: 20%;
+    border-radius: 15px 15px 15px 0 !important;
+}
+
+.system-message {
+    background-color: #f0f0f0;
+}
+
+.suggested-question {
+    cursor: pointer;
+    text-align: left;
+}
+</style>
+{% endblock %}

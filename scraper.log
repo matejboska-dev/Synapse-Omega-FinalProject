@@ -1,0 +1,24 @@
+2025-04-04 12:39:52,890 - synapse-scraper - INFO - Začínám sběr zpravodajských článků pro projekt Synapse...
+2025-04-04 12:39:52,890 - synapse-scraper - INFO - Spuštěn režim nejnovějších zpráv
+2025-04-04 12:39:52,890 - synapse-scraper - INFO - Používám konfiguraci databáze z config/database.json
+2025-04-04 12:39:52,892 - synapse-scraper - ERROR - Chyba při připojení k databázi: ('01000', "[01000] [unixODBC][Driver Manager]Can't open lib 'ODBC Driver 17 for SQL Server' : file not found (0) (SQLDriverConnect)")
+2025-04-04 12:39:52,892 - synapse-scraper - ERROR - Nelze pokračovat bez připojení k databázi.
+2025-04-04 12:39:52,892 - synapse-scraper - INFO - Sběr dokončen, přidáno 0 nových článků
+2025-04-04 12:39:52,893 - synapse-scraper - INFO - Zpracování nasbíraných článků...
+2025-04-04 12:39:53,540 - synapse-scraper - INFO - Zpracování článků úspěšně dokončeno
+2025-04-04 12:39:55,212 - synapse-scraper - INFO - Začínám sběr zpravodajských článků pro projekt Synapse...
+2025-04-04 12:39:55,212 - synapse-scraper - INFO - Spuštěn režim nejnovějších zpráv
+2025-04-04 12:39:55,213 - synapse-scraper - INFO - Používám konfiguraci databáze z config/database.json
+2025-04-04 12:39:55,214 - synapse-scraper - ERROR - Chyba při připojení k databázi: ('01000', "[01000] [unixODBC][Driver Manager]Can't open lib 'ODBC Driver 17 for SQL Server' : file not found (0) (SQLDriverConnect)")
+2025-04-04 12:39:55,215 - synapse-scraper - ERROR - Nelze pokračovat bez připojení k databázi.
+2025-04-04 12:39:55,215 - synapse-scraper - INFO - Sběr dokončen, přidáno 0 nových článků
+2025-04-04 12:39:55,216 - synapse-scraper - INFO - Zpracování nasbíraných článků...
+2025-04-04 12:39:55,785 - synapse-scraper - INFO - Zpracování článků úspěšně dokončeno
+2025-04-04 13:14:02,900 - synapse-scraper - INFO - Začínám sběr zpravodajských článků pro projekt Synapse...
+2025-04-04 13:14:02,902 - synapse-scraper - INFO - Spuštěn režim nejnovějších zpráv
+2025-04-04 13:14:02,904 - synapse-scraper - INFO - Používám konfiguraci databáze z config/database.json
+2025-04-04 13:14:02,917 - synapse-scraper - ERROR - Chyba při připojení k databázi: ('01000', "[01000] [unixODBC][Driver Manager]Can't open lib 'ODBC Driver 17 for SQL Server' : file not found (0) (SQLDriverConnect)")
+2025-04-04 13:14:02,917 - synapse-scraper - ERROR - Nelze pokračovat bez připojení k databázi.
+2025-04-04 13:14:02,917 - synapse-scraper - INFO - Sběr dokončen, přidáno 0 nových článků
+2025-04-04 13:14:02,922 - synapse-scraper - INFO - Zpracování nasbíraných článků...
+2025-04-04 13:14:04,913 - synapse-scraper - INFO - Zpracování článků úspěšně dokončeno

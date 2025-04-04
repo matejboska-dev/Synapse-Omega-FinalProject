@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Zpravodajský Analyzátor - Textový analyzátor{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Textový analyzátor</h1>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Analyzujte svůj text</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('analyze') }}" method="post">
+                    <div class="mb-3">
+                        <label for="text" class="form-label">Zadejte text k analýze</label>
+                        <textarea class="form-control" id="text" name="text" rows="6" required>{% if result %}{{ result.text }}{% endif %}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Analyzovat
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if result %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Statistiky textu</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Počet znaků</span>
+                        <span class="badge bg-primary rounded-pill">{{ result.length }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Počet slov</span>
+                        <span class="badge bg-primary rounded-pill">{{ result.word_count }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Výsledky AI analýzy</h5>
+            </div>
+            <div class="card-body">
+                {% if result.category %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-tags me-2"></i>Předpovězená kategorie</h6>
+                    <div class="mt-2">
+                        <span class="badge bg-primary p-2">{{ result.category }}</span>
+                    </div>
+                </div>
+                <hr>
+                {% endif %}
+                
+                {% if result.sentiment %}
+                <div>
+                    <h6><i class="fas fa-smile me-2"></i>Analýza sentimentu</h6>
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="progress flex-grow-1 me-2" style="height: 30px;">
+                            {% if result.sentiment == 'positive' %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%">Pozitivní</div>
+                            {% elif result.sentiment == 'neutral' %}
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 100%">Neutrální</div>
+                            {% else %}
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 100%">Negativní</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if result.sentiment_features %}
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Pozitivní slova:</span>
+                            <span class="fw-bold">{{ result.sentiment_features.positive_word_count }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Negativní slova:</span>
+                            <span class="fw-bold">{{ result.sentiment_features.negative_word_count }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Poměr sentimentu:</span>
+                            <span class="fw-bold">{{ "%.2f"|format(result.sentiment_features.sentiment_ratio) }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>O analyzátoru</h5>
+            </div>
+            <div class="card-body">
+                <p>Textový analyzátor používá modely strojového učení natrénované na českých zpravodajských článcích k analýze textu dvěma způsoby:</p>
+                
+                <h6 class="mt-3"><i class="fas fa-tags me-2"></i>Klasifikace kategorií</h6>
+                <p>Klasifikátor kategorií předpovídá, do které zpravodajské kategorie váš text patří na základě jeho obsahu. Model byl natrénován na článcích z různých českých zpravodajských zdrojů a dokáže rozpoznat vzory v textu, které jsou charakteristické pro konkrétní zpravodajské kategorie.</p>
+                
+                <h6 class="mt-3"><i class="fas fa-smile me-2"></i>Analýza sentimentu</h6>
+                <p>Analyzátor sentimentu určuje, zda má váš text pozitivní, negativní nebo neutrální tón. Provádí to analýzou použitých slov v textu a výpočtem skóre sentimentu na základě přítomnosti pozitivních a negativních slov.</p>
+                
+                <div class="alert alert-info mt-3">
+                    <h6 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Tip</h6>
+                    <p class="mb-0">Pro nejlepší výsledky zadejte alespoň několik vět českého textu. Modely byly trénovány na zpravodajských článcích, takže nejlépe fungují na obsahu souvisejícím se zprávami.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

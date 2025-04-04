@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Zpravodajský Analyzátor - Kategorie{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Kategorie</h1>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Distribuce článků podle kategorií</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Kategorie</th>
+                                <th>Počet</th>
+                                <th>Procento</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set total = categories|sum(attribute='count') %}
+                            {% for category in categories %}
+                            <tr>
+                                <td>{{ category.category if category.category else 'Bez kategorie' }}</td>
+                                <td>{{ category.count }}</td>
+                                <td>{{ "%.2f"|format(category.count / total * 100) if total > 0 else "0.00" }}%</td>
+                                <td>
+                                    <a href="{{ url_for('articles', category=category.category) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-search me-1"></i>Zobrazit články
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Vizualizace kategorií</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoriesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the categories data
+        var categoriesData = JSON.parse('{{ categories|tojson|safe }}');
+        
+        if (!categoriesData || categoriesData.length === 0) {
+            document.getElementById('categoriesChart').parentNode.innerHTML = '<div class="alert alert-info">Nejsou dostupná žádná data kategorií k zobrazení.</div>';
+            return;
+        }
+        
+        // Prepare data for chart (take only top 10 categories)
+        var topCategories = categoriesData.slice(0, 10);
+        var labels = topCategories.map(function(cat) { return cat.category || 'Bez kategorie'; });
+        var counts = topCategories.map(function(cat) { return cat.count; });
+        
+        // Random colors
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        
+        var backgroundColors = [];
+        for (var i = 0; i < labels.length; i++) {
+            backgroundColors.push(getRandomColor());
+        }
+        
+        var borderColors = backgroundColors.slice();
+        
+        // Create chart
+        var ctx = document.getElementById('categoriesChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Počet článků',
+                    data: counts,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top 10 kategorií podle počtu článků',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}
