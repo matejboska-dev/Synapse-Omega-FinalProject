@@ -116,7 +116,8 @@
                         </div>
                         
                         <div class="word-lists">
-                            {% if article.positive_words %}
+                            <!-- Modified section to check if positive_words is a list -->
+                            {% if article.positive_words and article.positive_words is iterable and article.positive_words is not string %}
                             <div class="word-list">
                                 <div class="word-list-title positive">Pozitivní výrazy</div>
                                 <div class="word-tags">
@@ -127,7 +128,8 @@
                             </div>
                             {% endif %}
                             
-                            {% if article.negative_words %}
+                            <!-- Modified section to check if negative_words is a list -->
+                            {% if article.negative_words and article.negative_words is iterable and article.negative_words is not string %}
                             <div class="word-list">
                                 <div class="word-list-title negative">Negativní výrazy</div>
                                 <div class="word-tags">

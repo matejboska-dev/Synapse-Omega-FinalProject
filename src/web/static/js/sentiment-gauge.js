@@ -1,6 +1,5 @@
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all sentiment gauges on the page
     initSentimentGauges();
 });
 
