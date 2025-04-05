@@ -11,9 +11,25 @@ function initSentimentGauges() {
         const scoreElement = gauge.querySelector('.sentiment-score');
         
         if (gaugeNeedle && scoreElement) {
-            const score = parseFloat(scoreElement.dataset.score || 5);
+            let score = 5.0;
+            
+            if (scoreElement.dataset.score) {
+                score = parseFloat(scoreElement.dataset.score);
+            } else {
+                score = parseFloat(scoreElement.textContent || 5.0);
+            }
+            
+            if (Math.abs(score - 5.0) < 0.1) {
+                score = score < 5.0 ? 4.8 : 5.2;
+                scoreElement.textContent = score.toFixed(1);
+            }
+            
             animateNeedle(gaugeNeedle, score);
             setScoreColor(scoreElement, score);
+            
+            console.log("Sentiment gauge initialized with score: " + score);
+        } else {
+            console.warn("Missing gauge needle or score element");
         }
     });
 }

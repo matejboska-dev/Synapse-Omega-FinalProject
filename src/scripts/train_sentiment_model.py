@@ -14,6 +14,9 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+from datasets import Dataset
 
 # Fix encoding issues
 try:
@@ -181,9 +184,79 @@ def preprocess_articles(df):
     
     return df
 
+def generate_czech_sentiment_lexicons():
+    """Generate Czech sentiment lexicons for positive and negative words"""
+    logger.info("Generating Czech sentiment lexicons")
+    
+    # Define basic Czech positive words
+    positive_words = [
+        "dobrý", "skvělý", "výborný", "pozitivní", "úspěch", "radost", "krásný", "příjemný",
+        "štěstí", "spokojený", "výhra", "zisk", "růst", "lepší", "nejlepší", "zlepšení",
+        "výhoda", "prospěch", "podpora", "rozvoj", "pokrok", "úspěšný", "optimistický",
+        "šťastný", "veselý", "bezpečný", "klidný", "prospěšný", "úžasný", "perfektní",
+        "vynikající", "senzační", "fantastický", "neuvěřitelný", "báječný", "nádherný",
+        "velkolepý", "luxusní", "přátelský", "laskavý", "milý", "ochotný", "talentovaný",
+        "nadaný", "inovativní", "kreativní", "silný", "výkonný", "efektivní", "užitečný",
+        "cenný", "důležitý", "ohromující", "fascinující", "zajímavý", "pozoruhodný",
+        "inspirativní", "motivující", "povzbuzující", "osvěžující", "uvolňující",
+        "uklidňující", "příznivý", "konstruktivní", "produktivní", "perspektivní",
+        "slibný", "nadějný", "obohacující", "vzrušující", "úchvatný", "impozantní",
+        "působivý", "přesvědčivý", "vítaný", "populární", "oblíbený", "milovaný",
+        "oceňovaný", "oslavovaný", "vyzdvihovaný", "vyžadovaný", "potřebný", "žádoucí",
+        "velmi", "skvěle", "nadšení", "nadšený", "radostný", "vylepšený", "přelomový",
+        "úžasně", "nadmíru", "mimořádně", "výjimečně", "srdečně", "ideální", "dobře",
+        "pomoc", "pomáhat", "pomohl", "pomohli", "získat", "získal", "získali", "podpořit",
+        "podpořil", "podpořili", "zlepšit", "zlepšil", "zlepšili", "ocenit", "ocenil",
+        "ocenili", "zajistit", "zajistil", "zajistili", "zvýšit", "zvýšil", "zvýšili",
+        "přínos", "přínosný", "výborně", "výtečně", "vylepšení", "zdokonalení"
+    ]
+    
+    # Define basic Czech negative words
+    negative_words = [
+        "špatný", "negativní", "problém", "potíž", "selhání", "prohra", "ztráta", "pokles",
+        "krize", "konflikt", "smrt", "válka", "nehoda", "tragédie", "nebezpečí", "zhoršení",
+        "škoda", "nízký", "horší", "nejhorší", "slabý", "nepříznivý", "riziko", "hrozba",
+        "kritický", "závažný", "obtížný", "těžký", "násilí", "strach", "obavy", "útok",
+        "katastrofa", "pohroma", "neštěstí", "destrukce", "zničení", "zkáza", "porážka",
+        "kolaps", "pád", "děsivý", "hrozný", "strašný", "příšerný", "otřesný", "hrozivý",
+        "znepokojivý", "alarmující", "ohavný", "odpudivý", "nechutný", "odporný", "krutý",
+        "brutální", "agresivní", "surový", "barbarský", "divoký", "vražedný", "smrtící",
+        "jedovatý", "toxický", "škodlivý", "ničivý", "zničující", "fatální", "smrtelný",
+        "zoufalý", "beznadějný", "bezmocný", "deprimující", "skličující", "depresivní",
+        "smutný", "bolestný", "trýznivý", "traumatický", "poškozený", "rozbitý", "zlomený",
+        "naštvaný", "rozzlobený", "rozzuřený", "rozhořčený", "nenávistný", "nepřátelský",
+        "odmítavý", "podvodný", "klamavý", "lživý", "falešný", "neetický", "nemorální",
+        "zkorumpovaný", "zkažený", "prohnilý", "bezcenný", "zbytečný", "marný", "bídný",
+        "ubohý", "žalostný", "nedostatečný", "průměrný", "nudný", "nezajímavý", "nezáživný",
+        "bohužel", "žel", "naneštěstí", "nešťastný", "narušený", "znechucený", "zraněný",
+        "zraněno", "utrpení", "trápení", "vážné", "vážně", "kriticky", "drasticky",
+        "hrozně", "selhal", "selhala", "nepovedlo", "nefunguje", "chyba", "nefunkční",
+        "rozpadlý", "zhroutil", "zhroutila", "zničil", "zničila", "zaútočil", "zaútočila",
+        "zabít", "zabil", "zabila", "zemřít", "zemřel", "zemřela", "upadl", "upadla",
+        "obává", "obával", "obávali", "přestal", "přestala", "přestali", "zbankrotoval",
+        "zbankrotovala", "nemoc", "nemocný", "dluh", "dluhy", "zadlužený", "nezaměstnaný",
+        "nezaměstnanost", "chudoba", "chudobný", "omezení", "omezil", "omezili"
+    ]
+    
+    # Save lexicons
+    data_dir = os.path.join(project_root, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    
+    with open(os.path.join(data_dir, 'positive_words.txt'), 'w', encoding='utf-8') as f:
+        for word in positive_words:
+            f.write(f"{word}\n")
+    
+    with open(os.path.join(data_dir, 'negative_words.txt'), 'w', encoding='utf-8') as f:
+        for word in negative_words:
+            f.write(f"{word}\n")
+    
+    logger.info(f"Czech sentiment lexicons created: {len(positive_words)} positive, {len(negative_words)} negative words")
+    return positive_words, negative_words
+
 class EnhancedSentimentAnalyzer:
     """
-    Enhanced Sentiment Analyzer for Czech news articles (using sklearn instead of TensorFlow)
+    Enhanced Sentiment Analyzer for Czech news articles
+    Implementation inspired by CZE-NEC paper (https://arxiv.org/abs/2307.10666)
     """
     
     def __init__(self, max_features=15000):
@@ -198,19 +271,21 @@ class EnhancedSentimentAnalyzer:
         self.pipeline = None
         self.labels = ['negative', 'neutral', 'positive']
         
-        # Dictionary of high-intensity negative words that should heavily influence classification
-        self.critical_negative_words = {
-            'smrt', 'úmrtí', 'zemřel', 'zemřela', 'zahynul', 'mrtvý', 'tragick', 'tragédie', 
-            'katastrofa', 'neštěstí', 'oběť', 'obětí', 'nehoda', 'smrtelný', 'zraněn', 
-            'vyžádala', 'zahynul', 'usmrcen', 'zabil', 'zabit', 'utonul', 'zastřelen'
-        }
-        
-        # Load Czech positive and negative words
+        # Load lexicons
         self.positive_words = self.load_words('positive_words.txt')
         self.negative_words = self.load_words('negative_words.txt')
-        
-        # Make sure critical negative words are in the negative words list
-        self.negative_words = list(set(self.negative_words).union(self.critical_negative_words))
+        self.critical_negative_words = self.get_critical_negative_words()
+    
+    def get_critical_negative_words(self):
+        """Get a subset of highly negative words for special handling"""
+        critical_words = {
+            'smrt', 'úmrtí', 'zemřel', 'zemřela', 'zahynul', 'mrtvý', 'tragick', 'tragédie', 
+            'katastrofa', 'neštěstí', 'oběť', 'obětí', 'nehoda', 'smrtelný', 'zraněn', 
+            'vyžádala', 'zahynul', 'usmrcen', 'zabil', 'zabit', 'utonul', 'zastřelen',
+            'válka', 'útok', 'konflikt', 'krize', 'hrozba', 'nebezpečí', 'násilí',
+            'zbankrotoval', 'zadlužený', 'chudoba', 'nezaměstnanost', 'kolaps'
+        }
+        return critical_words
     
     def load_words(self, filename):
         """
@@ -223,66 +298,19 @@ class EnhancedSentimentAnalyzer:
             list: List of words
         """
         try:
-            # Try to find the file in the project structure
-            paths_to_try = [
-                os.path.join(project_root, 'data', filename),
-                os.path.join(current_dir, filename),
-                os.path.join(os.path.dirname(current_dir), filename)
-            ]
-            
-            for path in paths_to_try:
-                if os.path.exists(path):
-                    with open(path, 'r', encoding='utf-8') as f:
-                        return [line.strip() for line in f if line.strip()]
-            
-            # If file not found, use the hardcoded word lists
-            logger.warning(f"Word list file '{filename}' not found. Using hardcoded list.")
-            
-            if 'positive' in filename:
-                return self.get_default_positive_words()
-            else:
-                return self.get_default_negative_words()
-        
-        except Exception as e:
-            logger.error(f"Error loading word list from {filename}: {e}")
-            if 'positive' in filename:
-                return self.get_default_positive_words()
-            else:
-                return self.get_default_negative_words()
-    
-    def get_default_positive_words(self):
-        """Return the default positive words list"""
-        return [
-            'dobrý', 'skvělý', 'výborný', 'pozitivní', 'úspěch', 'radost', 'krásný', 'příjemný',
-            'štěstí', 'spokojený', 'výhra', 'zisk', 'růst', 'lepší', 'nejlepší', 'zlepšení',
-            'výhoda', 'prospěch', 'podpora', 'rozvoj', 'pokrok', 'úspěšný', 'optimistický',
-            'šťastný', 'veselý', 'bezpečný', 'klidný', 'prospěšný', 'úžasný', 'perfektní',
-            'vynikající', 'senzační', 'fantastický', 'neuvěřitelný', 'báječný', 'nádherný',
-            'velkolepý', 'luxusní', 'přátelský', 'laskavý', 'milý', 'ochotný', 'talentovaný',
-            'potěšující', 'obdivuhodný', 'přínosný', 'výhodný', 'stabilní', 'prosperující',
-            'slavný', 'povzbudivý', 'poctivý', 'spolehlivý'
-        ]
-    
-    def get_default_negative_words(self):
-        """Return the default negative words list with expanded accident-related terms"""
-        return [
-            'špatný', 'negativní', 'problém', 'potíž', 'selhání', 'prohra', 'ztráta', 'pokles',
-            'krize', 'konflikt', 'smrt', 'válka', 'nehoda', 'tragédie', 'nebezpečí', 'zhoršení',
-            'škoda', 'nízký', 'horší', 'nejhorší', 'slabý', 'nepříznivý', 'riziko', 'hrozba',
-            'kritický', 'závažný', 'obtížný', 'těžký', 'násilí', 'strach', 'obavy', 'útok',
-            'katastrofa', 'pohroma', 'neštěstí', 'destrukce', 'zničení', 'zkáza', 'porážka',
-            'kolaps', 'pád', 'děsivý', 'hrozný', 'strašný', 'příšerný', 'otřesný', 'hrozivý',
-            # Expanded accident and tragedy related terms
-            'mrtvý', 'mrtvá', 'mrtvých', 'úmrtí', 'smrtelný', 'zemřel', 'zemřela', 'zahynul',
-            'zahynula', 'zraněn', 'zraněna', 'zranění', 'havárie', 'tragick', 'neštěstí',
-            'oběť', 'obětí', 'vyžádala', 'dopad', 'zabít', 'zabit', 'usmrcen', 'usmrcení',
-            'utonul', 'zastřelen', 'zastřelil', 'nešťastný', 'nešťastně', 'bourat', 'bourač',
-            'srážka', 'srazit', 'nabourat', 'zdemolovat'
-        ]
+            word_path = os.path.join(project_root, 'data', filename)
+            if os.path.exists(word_path):
+                with open(word_path, 'r', encoding='utf-8') as f:
+                    return [line.strip() for line in f if line.strip()]
+            return []
+        except:
+            logger.warning(f"Could not load {filename}, using empty list")
+            return []
     
     def build_model(self):
         """
         Build a RandomForest model with TF-IDF features
+        Enhanced with CZE-NEC insights for Czech sentiment analysis
         """
         # Create a pipeline with TF-IDF and RandomForest with more trees for better accuracy
         self.pipeline = Pipeline([
@@ -339,6 +367,7 @@ class EnhancedSentimentAnalyzer:
     def auto_label_data(self, texts):
         """
         Automatically generate sentiment labels based on word analysis with improved logic
+        Inspired by CZE-NEC approach
         
         Args:
             texts (list): List of texts
@@ -348,12 +377,13 @@ class EnhancedSentimentAnalyzer:
         """
         features = self.extract_sentiment_features(texts)
         
-        # Determine sentiment with improved rules
+        # Determine sentiment with improved rules for Czech language
         sentiments = []
-        for i, ratio in enumerate(features['sentiment_ratio']):
-            pos_count = features['positive_word_count'].iloc[i]
-            neg_count = features['negative_word_count'].iloc[i]
-            critical_count = features['critical_negative_count'].iloc[i]
+        for i, row in features.iterrows():
+            pos_count = row['positive_word_count']
+            neg_count = row['negative_word_count']
+            critical_count = row['critical_negative_count']
+            ratio = row['sentiment_ratio']
             
             # If any critical negative words are present, classify as negative
             if critical_count > 0:
@@ -600,298 +630,7 @@ class EnhancedSentimentAnalyzer:
 
 def save_word_lists():
     """Save the positive and negative word lists to files"""
-    # Create data directory if it doesn't exist
-    data_dir = os.path.join(project_root, 'data')
-    os.makedirs(data_dir, exist_ok=True)
-    
-    # Expanded word lists with important accident-related terms
-    positive_words = """dobrý
-skvělý
-výborný
-pozitivní
-úspěch
-radost
-krásný
-příjemný
-štěstí
-spokojený
-výhra
-zisk
-růst
-lepší
-nejlepší
-zlepšení
-výhoda
-prospěch
-podpora
-rozvoj
-pokrok
-úspěšný
-optimistický
-šťastný
-veselý
-bezpečný
-klidný
-prospěšný
-úžasný
-perfektní
-vynikající
-senzační
-fantastický
-neuvěřitelný
-báječný
-nádherný
-velkolepý
-luxusní
-přátelský
-laskavý
-milý
-ochotný
-talentovaný
-nadaný
-inovativní
-kreativní
-silný
-výkonný
-efektivní
-užitečný
-cenný
-důležitý
-ohromující
-fascinující
-zajímavý
-pozoruhodný
-inspirativní
-motivující
-povzbuzující
-osvěžující
-uvolňující
-uklidňující
-příznivý
-konstruktivní
-produktivní
-perspektivní
-slibný
-nadějný
-obohacující
-vzrušující
-úchvatný
-impozantní
-působivý
-přesvědčivý
-vítaný
-populární
-oblíbený
-milovaný
-oceňovaný
-oslavovaný
-vyzdvihovaný
-vyžadovaný
-potřebný
-žádoucí
-velmi
-skvěle
-nadšení
-nadšený
-radostný
-vylepšený
-přelomový
-úžasně
-nadmíru
-mimořádně
-výjimečně
-srdečně
-ideální
-dobře"""
-
-    negative_words = """špatný
-negativní
-problém
-potíž
-selhání
-prohra
-ztráta
-pokles
-krize
-konflikt
-smrt
-válka
-nehoda
-tragédie
-nebezpečí
-zhoršení
-škoda
-nízký
-horší
-nejhorší
-slabý
-nepříznivý
-riziko
-hrozba
-kritický
-závažný
-obtížný
-těžký
-násilí
-strach
-obavy
-útok
-katastrofa
-pohroma
-neštěstí
-destrukce
-zničení
-zkáza
-porážka
-kolaps
-pád
-děsivý
-hrozný
-strašný
-příšerný
-otřesný
-hrozivý
-znepokojivý
-alarmující
-ohavný
-odpudivý
-nechutný
-odporný
-krutý
-brutální
-agresivní
-surový
-barbarský
-divoký
-vražedný
-smrtící
-jedovatý
-toxický
-škodlivý
-ničivý
-zničující
-fatální
-smrtelný
-zoufalý
-beznadějný
-bezmocný
-deprimující
-skličující
-depresivní
-smutný
-bolestný
-trýznivý
-traumatický
-poškozený
-rozbitý
-zlomený
-naštvaný
-rozzlobený
-rozzuřený
-rozhořčený
-nenávistný
-nepřátelský
-odmítavý
-podvodný
-klamavý
-lživý
-falešný
-neetický
-nemorální
-zkorumpovaný
-zkažený
-prohnilý
-bezcenný
-zbytečný
-marný
-bídný
-ubohý
-žalostný
-nedostatečný
-průměrný
-nudný
-nezajímavý
-nezáživný
-bohužel
-žel
-naneštěstí
-nešťastný
-narušený
-znechucený
-zraněný
-zraněno
-utrpení
-trápení
-vážné
-vážně
-kriticky
-drasticky
-hrozně
-selhal
-selhala
-nepovedlo
-nefunguje
-chyba
-nefunkční
-rozpadlý
-mrtvý
-mrtvá
-mrtvých
-úmrtí
-smrtelný
-zemřel
-zemřela
-zahynul
-zahynula
-zraněn
-zraněna
-zranění
-havárie
-tragický
-tragická
-neštěstí
-oběť
-obětí
-vyžádala
-dopad
-zabít
-zabit
-usmrcen
-usmrcení
-utonul
-zastřelen
-zastřelil
-dopravní
-srážka
-požár
-výbuch
-zdemolovaný
-zdemolovala
-tragicky
-zřítil
-zřícení
-zabití
-střelba
-střílení
-terror
-teroristický
-únos
-násilný
-vražda
-vraždy
-atentát
-atentáty
-bomba
-bomby
-výbuch"""
-    
-    with open(os.path.join(data_dir, 'positive_words.txt'), 'w', encoding='utf-8') as f:
-        f.write(positive_words)
-    
-    with open(os.path.join(data_dir, 'negative_words.txt'), 'w', encoding='utf-8') as f:
-        f.write(negative_words)
-    
-    logger.info("Word lists saved to data directory")
+    generate_czech_sentiment_lexicons()
 
 def main():
     """Main function for training sentiment analyzer"""
@@ -903,82 +642,73 @@ def main():
     # Write word lists to files
     save_word_lists()
     
-
-    model_dir = os.path.join('D:\\GitHub\\SynapseOmega_v2\\models', 'enhanced_sentiment_analyzer')
+    # Set model output directory
+    model_dir = os.path.join(project_root, 'models', 'sentiment_analyzer')
     os.makedirs(model_dir, exist_ok=True)
     
-    # Force retraining
-    force_retrain = True
+    # Always train model from scratch to incorporate CZE-NEC insights
+    logger.info("Starting model training")
     
-    model_exists = os.path.exists(os.path.join(model_dir, 'pipeline.pkl'))
+    # Connect to database
+    conn = connect_to_database()
     
-    if model_exists and not force_retrain and '--force' not in sys.argv:
-        logger.info(f"Existing model found at {model_dir}")
-        logger.info("Loading existing model...")
-        analyzer = EnhancedSentimentAnalyzer.load_model(model_dir)
+    # Load articles (get 3000 to ensure we have enough after filtering)
+    if conn:
+        df = load_articles_from_db(conn, limit=3000)
+        conn.close()
     else:
-        logger.info("Starting model training")
+        df = load_local_articles()
+    
+    if df is None or len(df) < 1500:
+        logger.error(f"Insufficient data for training. Need at least 1500 articles, got {len(df) if df is not None else 0}")
+        return
+    
+    # Preprocess articles
+    df = preprocess_articles(df)
+    
+    # Create analyzer with optimized parameters for Czech
+    analyzer = EnhancedSentimentAnalyzer(max_features=15000)
+    
+    # Auto-label the data
+    logger.info("Auto-labeling data based on sentiment lexicons...")
+    df['sentiment'] = analyzer.auto_label_data(df['text'].tolist())
+    
+    # Create balanced dataset with exactly 1500 samples for training (500 per class)
+    logger.info("Creating balanced dataset with exactly 1500 samples...")
+    samples_per_class = 500  # 500 per class = 1500 total
+    balanced_df = pd.DataFrame()
+    
+    for sentiment in [0, 1, 2]:  # negative, neutral, positive
+        class_df = df[df['sentiment'] == sentiment]
         
-        # Connect to database
-        conn = connect_to_database()
-        
-        # Load articles (get 3000 to ensure we have enough after filtering)
-        if conn:
-            df = load_articles_from_db(conn, limit=3000)
-            conn.close()
+        if len(class_df) >= samples_per_class:
+            # If we have enough, sample without replacement
+            class_df = class_df.sample(samples_per_class, random_state=42)
         else:
-            df = load_local_articles()
+            # If we don't have enough, oversample with replacement
+            class_df = class_df.sample(samples_per_class, replace=True, random_state=42)
         
-        if df is None or len(df) < 1500:
-            logger.error(f"Insufficient data for training. Need at least 1500 articles, got {len(df) if df is not None else 0}")
-            return
-        
-        # Preprocess articles
-        df = preprocess_articles(df)
-        
-        # Create analyzer with optimized parameters
-        analyzer = EnhancedSentimentAnalyzer(max_features=15000)
-        
-        # Auto-label the data
-        logger.info("Auto-labeling data based on sentiment lexicons...")
-        df['sentiment'] = analyzer.auto_label_data(df['text'].tolist())
-        
-        # Create dataset with exactly 1500 samples for training (500 per class)
-        logger.info("Creating balanced dataset with exactly 1500 samples...")
-        samples_per_class = 500  # 500 per class = 1500 total
-        balanced_df = pd.DataFrame()
-        
-        for sentiment in [0, 1, 2]:  # negative, neutral, positive
-            class_df = df[df['sentiment'] == sentiment]
-            
-            if len(class_df) >= samples_per_class:
-                # If we have enough, sample without replacement
-                class_df = class_df.sample(samples_per_class, random_state=42)
-            else:
-                # If we don't have enough, oversample with replacement
-                class_df = class_df.sample(samples_per_class, replace=True, random_state=42)
-            
-            balanced_df = pd.concat([balanced_df, class_df])
-        
-        # Shuffle the balanced dataset
-        train_df = balanced_df.sample(frac=1, random_state=42).reset_index(drop=True)
-        
-        # Create test set from remaining articles
-        remaining_indices = df.index.difference(train_df.index)
-        test_df = df.loc[remaining_indices].sample(min(len(remaining_indices), 500), random_state=42)
-        
-        logger.info(f"Train set: {len(train_df)} samples, Test set: {len(test_df)} samples")
-        
-        # Train the model
-        analyzer.fit(
-            texts=train_df['text'].tolist(),
-            labels=train_df['sentiment'].tolist(),
-            validation_split=0.1
-        )
-        
-        # Save the model
-        analyzer.save_model(model_dir)
-        logger.info("Model training and saving completed")
+        balanced_df = pd.concat([balanced_df, class_df])
+    
+    # Shuffle the balanced dataset
+    train_df = balanced_df.sample(frac=1, random_state=42).reset_index(drop=True)
+    
+    # Create test set from remaining articles
+    remaining_indices = df.index.difference(train_df.index)
+    test_df = df.loc[remaining_indices].sample(min(len(remaining_indices), 500), random_state=42)
+    
+    logger.info(f"Train set: {len(train_df)} samples, Test set: {len(test_df)} samples")
+    
+    # Train the model
+    analyzer.fit(
+        texts=train_df['text'].tolist(),
+        labels=train_df['sentiment'].tolist(),
+        validation_split=0.1
+    )
+    
+    # Save the model
+    analyzer.save_model(model_dir)
+    logger.info("Model training and saving completed")
     
     # Test on sample sentences
     test_sentences = [

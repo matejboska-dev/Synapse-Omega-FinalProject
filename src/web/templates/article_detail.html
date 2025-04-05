@@ -63,7 +63,61 @@
                 <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Analýza</h5>
             </div>
             <div class="card-body p-0">
-                <!-- Sentiment Analysis with Gauge -->
+                <!-- Nová vizualizace sentimentu -->
+                <div class="sentiment-box p-3 border rounded mt-3">
+                    <h5>Analýza sentimentu: 
+                        <span class="{% if article.sentiment == 'positive' %}text-success{% elif article.sentiment == 'negative' %}text-danger{% else %}text-secondary{% endif %}">
+                            {{ article.sentiment }}
+                        </span>
+                    </h5>
+                    <div class="sentiment-details mt-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="sentiment-stat">
+                                    <div class="stat-value text-success">{{ article.sentiment_features.positive_word_count }}</div>
+                                    <div class="stat-label">Pozitivních slov</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="sentiment-stat">
+                                    <div class="stat-value text-info">{{ "%.2f"|format(article.sentiment_features.sentiment_ratio) }}</div>
+                                    <div class="stat-label">Poměr sentimentu</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="sentiment-stat">
+                                    <div class="stat-value text-danger">{{ article.sentiment_features.negative_word_count }}</div>
+                                    <div class="stat-label">Negativních slov</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Přidejte kód pro zobrazení nalezených slov -->
+                        <div class="mt-3">
+                            <p><strong>Důvod hodnocení:</strong> {{ article.sentiment_reason }}</p>
+                            
+                            {% if article.positive_words and article.positive_words|length > 0 %}
+                            <div class="mb-2">
+                                <strong>Pozitivní slova:</strong>
+                                {% for word in article.positive_words %}
+                                    <span class="badge bg-success me-1">{{ word }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if article.negative_words and article.negative_words|length > 0 %}
+                            <div>
+                                <strong>Negativní slova:</strong>
+                                {% for word in article.negative_words %}
+                                    <span class="badge bg-danger me-1">{{ word }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Původní tachometr sentimentu můžeme zachovat jako alternativní vizualizaci -->
                 {% if article.sentiment %}
                 <div class="sentiment-gauge-container">
                     <div class="sentiment-gauge-title">Sentiment analýza</div>
@@ -95,67 +149,6 @@
                             <div class="gauge-label">Velmi negativní</div>
                             <div class="gauge-label">Neutrální</div>
                             <div class="gauge-label">Velmi pozitivní</div>
-                        </div>
-                    </div>
-                    
-                    <div class="sentiment-explanation">
-                        <div class="explanation-title {% if article.sentiment == 'positive' %}positive{% elif article.sentiment == 'negative' %}negative{% else %}neutral{% endif %}">
-                            {% if article.sentiment == 'positive' %}
-                                Pozitivní hodnocení článku
-                            {% elif article.sentiment == 'negative' %}
-                                Negativní hodnocení článku
-                            {% else %}
-                                Neutrální hodnocení článku
-                            {% endif %}
-                        </div>
-                        
-                        <div class="score-explanation">
-                            {{ article.sentiment_description|default('') }}
-                            <br><br>
-                            {{ article.sentiment_reason|default('') }}
-                        </div>
-                        
-                        <div class="word-lists">
-                            <!-- Modified section to check if positive_words is a list -->
-                            {% if article.positive_words and article.positive_words is iterable and article.positive_words is not string %}
-                            <div class="word-list">
-                                <div class="word-list-title positive">Pozitivní výrazy</div>
-                                <div class="word-tags">
-                                    {% for word in article.positive_words %}
-                                    <span class="word-tag positive">{{ word }}</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            <!-- Modified section to check if negative_words is a list -->
-                            {% if article.negative_words and article.negative_words is iterable and article.negative_words is not string %}
-                            <div class="word-list">
-                                <div class="word-list-title negative">Negativní výrazy</div>
-                                <div class="word-tags">
-                                    {% for word in article.negative_words %}
-                                    <span class="word-tag negative">{{ word }}</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="sentiment-additional">
-                        <div class="sentiment-stat">
-                            <div class="stat-value">{{ article.sentiment_features.positive_word_count|default(0) }}</div>
-                            <div class="stat-label">Pozitivních slov</div>
-                        </div>
-                        
-                        <div class="sentiment-stat">
-                            <div class="stat-value">{{ article.sentiment_features.negative_word_count|default(0) }}</div>
-                            <div class="stat-label">Negativních slov</div>
-                        </div>
-                        
-                        <div class="sentiment-stat">
-                            <div class="stat-value">{{ "%.2f"|format(article.sentiment_features.sentiment_ratio|default(1.0)) }}</div>
-                            <div class="stat-label">Poměr sentimentu</div>
                         </div>
                     </div>
                 </div>
@@ -602,6 +595,46 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Nové styly pro vizualizaci sentimentu */
+.sentiment-box {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    transition: box-shadow 0.3s ease;
+}
+
+.sentiment-box:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.sentiment-stat {
+    padding: 10px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.sentiment-stat:hover {
+    transform: translateY(-3px);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.badge {
+    margin: 3px;
+    padding: 5px 8px;
+    font-weight: normal;
 }
 </style>
 {% endblock %}
