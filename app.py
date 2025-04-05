@@ -282,92 +282,6 @@ class SimpleCategoryClassifier:
                 results.append('Zprávy')
         return results
 
-class SimpleSentimentAnalyzer:
-    def __init__(self):
-        self.labels = ['negative', 'neutral', 'positive']
-        self.positive_words = self.load_words('positive_words.txt')
-        self.negative_words = self.load_words('negative_words.txt')
-    
-    def load_words(self, filename):
-        try:
-            word_path = os.path.join(project_root, 'data', filename)
-            if os.path.exists(word_path):
-                with open(word_path, 'r', encoding='utf-8') as f:
-                    return [line.strip() for line in f]
-            return []
-        except:
-            if 'positive' in filename:
-                return ['dobrý', 'skvělý', 'výborný', 'úspěch', 'radost', 'krásný', 'příjemný']
-            else:
-                return ['špatný', 'negativní', 'problém', 'tragédie', 'konflikt', 'krize', 'útok']
-    
-    def predict(self, texts):
-        if not isinstance(texts, list):
-            texts = [texts]
-        results = []
-        for text in texts:
-            text = text.lower() if isinstance(text, str) else ""
-            
-            pos_count = sum(1 for word in text.split() if word in self.positive_words)
-            neg_count = sum(1 for word in text.split() if word in self.negative_words)
-            
-            if neg_count > pos_count * 1.2:
-                results.append(0)
-            elif pos_count > neg_count * 1.2:
-                results.append(2)
-            else:
-                results.append(1)
-        
-        return results
-    
-    def extract_sentiment_features(self, texts):
-        if not isinstance(texts, list):
-            texts = [texts]
-        
-        features = pd.DataFrame()
-        
-        features['positive_word_count'] = [
-            sum(1 for word in text.lower().split() if word in self.positive_words) 
-            for text in texts
-        ]
-        
-        features['negative_word_count'] = [
-            sum(1 for word in text.lower().split() if word in self.negative_words)
-            for text in texts
-        ]
-        
-        features['sentiment_ratio'] = (features['positive_word_count'] + 1) / (features['negative_word_count'] + 1)
-        
-        return features
-
-    def explain_prediction(self, text):
-        if not isinstance(text, str):
-            text = str(text) if text is not None else ""
-            
-        text_lower = text.lower()
-        words = text_lower.split()
-        
-        positive_words_found = [word for word in words if word in self.positive_words]
-        negative_words_found = [word for word in words if word in self.negative_words]
-        
-        positive_count = len(positive_words_found)
-        negative_count = len(negative_words_found)
-        
-        sentiment_id = self.predict([text])[0]
-        sentiment = self.labels[sentiment_id]
-        
-        sentiment_ratio = (positive_count + 1) / (negative_count + 1)
-        
-        return {
-            'text': text,
-            'predicted_sentiment': sentiment,
-            'positive_words': positive_words_found[:10],
-            'negative_words': negative_words_found[:10],
-            'positive_word_count': positive_count,
-            'negative_word_count': negative_count,
-            'sentiment_ratio': sentiment_ratio
-        }
-
 class SimpleArticleChatbot:
     def __init__(self):
         self.responses = {
@@ -522,10 +436,12 @@ class EnhancedSentimentAnalyzer:
                 reason = "Text obsahuje vyváženou směs pozitivních a negativních slov nebo neobsahuje dostatek slov s emočním nábojem."
         
         sentiment_ratio = (positive_count + 1) / (negative_count + 1)
+        sentiment_score = 5.0 + (sentiment_ratio - 1) * 2  # Scale from 1-10
         
         return {
             'text': text,
             'predicted_sentiment': sentiment,
+            'sentiment_score': sentiment_score,
             'positive_words': positive_words_found[:10],
             'negative_words': negative_words_found[:10],
             'positive_word_count': positive_count,
@@ -578,71 +494,8 @@ def analyze_sentiment(text):
         }
     
     try:
-        sentiment_id = sentiment_model.predict([text])[0]
-        sentiment = sentiment_model.labels[sentiment_id]
-        
-        features = sentiment_model.extract_sentiment_features([text])
-        
-        if hasattr(features, 'iloc'):
-            positive_count = features['positive_word_count'].iloc[0]
-            negative_count = features['negative_word_count'].iloc[0]
-            sentiment_ratio = features['sentiment_ratio'].iloc[0]
-        else:
-            positive_count = features.get('positive_word_count', [0])[0]
-            negative_count = features.get('negative_word_count', [0])[0]
-            sentiment_ratio = features.get('sentiment_ratio', [1.0])[0]
-        
-        if sentiment == 'positive':
-            sentiment_score = 6.5 + min(3.0, sentiment_ratio - 1.0)
-        elif sentiment == 'negative':
-            inverse_ratio = 1.0 / max(0.1, sentiment_ratio)
-            sentiment_score = 3.5 - min(3.0, inverse_ratio - 1.0)
-        else:
-            sentiment_score = 4.8 + (sentiment_ratio - 1.0) * 0.4
-        
-        sentiment_score = max(0.5, min(9.5, sentiment_score))
-        
-        positive_words = []
-        negative_words = []
-        if hasattr(sentiment_model, 'explain_prediction') and callable(getattr(sentiment_model, 'explain_prediction')):
-            explanation = sentiment_model.explain_prediction(text)
-            if explanation:
-                positive_words = explanation.get('positive_words', [])
-                negative_words = explanation.get('negative_words', [])
-        
-        if positive_count > 0 and not positive_words and hasattr(sentiment_model, 'positive_words'):
-            for word in text.lower().split():
-                if word in sentiment_model.positive_words:
-                    positive_words.append(word)
-                    if len(positive_words) >= 3:
-                        break
-        
-        if negative_count > 0 and not negative_words and hasattr(sentiment_model, 'negative_words'):
-            for word in text.lower().split():
-                if word in sentiment_model.negative_words:
-                    negative_words.append(word)
-                    if len(negative_words) >= 3:
-                        break
-        
-        if sentiment == 'positive':
-            reason = f"Text obsahuje {positive_count} pozitivních slov, což převažuje nad {negative_count} negativními slovy."
-        elif sentiment == 'negative':
-            reason = f"Text obsahuje {negative_count} negativních slov, což převažuje nad {positive_count} pozitivními slovy."
-        else:
-            reason = f"Text obsahuje vyváženou kombinaci pozitivních ({positive_count}) a negativních ({negative_count}) slov."
-        
-        return {
-            'sentiment': sentiment,
-            'sentiment_score': sentiment_score,
-            'sentiment_features': {
-                'positive_word_count': positive_count,
-                'negative_word_count': negative_count,
-                'sentiment_ratio': sentiment_ratio
-            },
-            'sentiment_reason': reason,
-            'positive_words': positive_words,
-            'negative_words': negative_words
-        }
+        sentiment_results = sentiment_model.explain_prediction(text)
+        return sentiment_results
     except Exception as e:
         logger.error(f"Chyba při analýze sentimentu: {e}")
         import random
@@ -693,7 +546,8 @@ def extract_article_text(url, source):
             article_title = title_tag.get_text().strip()
             
         text = ""
-        
+        article_category = ""
+
         if "seznam" in domain or "seznamzpravy" in domain:
             logger.info("Attempting Seznam Zpravy specific extraction")
             article_selectors = [
@@ -714,6 +568,11 @@ def extract_article_text(url, source):
                         text = ' '.join([p.get_text().strip() for p in paragraphs])
                         if len(text) > 100:
                             break
+                            
+            # Extract category            
+            category_tag = soup.find('a', class_='breadcrumb__link')  
+            if category_tag:
+                article_category = category_tag.get_text().strip()
         
         elif "novinky.cz" in domain:
             logger.info("Attempting Novinky.cz specific extraction")
@@ -730,6 +589,11 @@ def extract_article_text(url, source):
                         text = ' '.join([p.get_text().strip() for p in paragraphs])
                         if len(text) > 100:
                             break
+                            
+            # Extract category 
+            category_tag = soup.select_one('a.path__part')
+            if category_tag:
+                article_category = category_tag.get_text().strip()
         
         elif "idnes" in domain:
             logger.info("Attempting iDnes specific extraction")
@@ -746,6 +610,11 @@ def extract_article_text(url, source):
                         text = ' '.join([p.get_text().strip() for p in paragraphs])
                         if len(text) > 100:
                             break
+                            
+            # Extract category
+            category_tag = soup.select_one('a.portal-g-breadcrumb-title')
+            if category_tag:
+                article_category = category_tag.get_text().strip()
         
         elif "aktualne" in domain:
             logger.info("Attempting Aktualne.cz specific extraction")
@@ -762,6 +631,11 @@ def extract_article_text(url, source):
                         text = ' '.join([p.get_text().strip() for p in paragraphs])
                         if len(text) > 100:
                             break
+                            
+            # Extract category
+            category_tag = soup.select_one('a.tag-title')
+            if category_tag:
+                article_category = category_tag.get_text().strip()
         
         if not text or len(text) < 100:
             logger.info("Using generic extraction methods")
@@ -831,16 +705,16 @@ def extract_article_text(url, source):
         
         logger.info(f"Extracted {char_count} characters and {word_count} words from {url}")
         
-        return text, char_count, word_count
+        return text, char_count, word_count, article_category
         
     except Exception as e:
         logger.error(f"Error extracting text from {url}: {e}")
-        return f"Chyba při načítání obsahu: {str(e)}", 0, 0
+        return f"Chyba při načítání obsahu: {str(e)}", 0, 0, ""
 
 def scrape_newest_articles():
     sources_to_scrape = {
         "novinky": "https://www.novinky.cz/rss",
-        "seznamzpravy": "https://www.seznamzpravy.cz/rss",
+        "seznamzpravy": "https://www.seznamzpravy.cz/rss/",
         "zpravy.aktualne": "https://zpravy.aktualne.cz/rss/",
         "idnes": "https://servis.idnes.cz/rss.aspx?c=zpravodaj",
         "ct24": "https://ct24.ceskatelevize.cz/rss/hlavni-zpravy"
@@ -871,19 +745,7 @@ def scrape_newest_articles():
                 elif hasattr(entry, 'updated'):
                     pub_date = entry.updated
                 
-                category = ""
-                if hasattr(entry, 'tags') and entry.tags:
-                    try:
-                        category = entry.tags[0].term
-                    except:
-                        try:
-                            category = entry.tags[0]['term']
-                        except:
-                            category = ""
-                elif hasattr(entry, 'category'):
-                    category = entry.category
-                
-                article_text, char_count, word_count = extract_article_text(url, source_name)
+                article_text, char_count, word_count, category = extract_article_text(url, source_name)
                 
                 if char_count < 50:
                     logger.warning(f"Skipping article with too little content: {title}")
@@ -1015,55 +877,38 @@ def load_data():
             logger.warning("Category model not found, using simple classifier")
             category_model = SimpleCategoryClassifier()
         
-        # Try to load sentiment model from multiple possible locations
         sentiment_model_paths = [
-            os.path.join(project_root, 'models', 'sentiment_analyzer'),  # Standard location
-            os.path.join(os.path.dirname(project_root), 'models', 'sentiment_analyzer'),  # Parent dir
-            os.path.join(project_root, 'models', '__pycache__')  # __pycache__ location
-        ]
-        
-        sentiment_model = None
-        for path in sentiment_model_paths:
+    os.path.join(project_root, 'models', 'sentiment_analyzer'),  # Standard location
+    os.path.join(os.path.dirname(project_root), 'models', 'sentiment_analyzer'),  # Parent dir
+    os.path.join(project_root, 'models', '__pycache__')  # __pycache__ location
+]
+
+        sentiment_model_paths = [
+    os.path.join(project_root, 'models', 'sentiment_analyzer'),  # Standard location
+    os.path.join(os.path.dirname(project_root), 'models', 'sentiment_analyzer'),  # Parent dir
+    os.path.join(project_root, 'models', '__pycache__')  # __pycache__ location
+]
+
+        sentiment_model_path = os.path.join(project_root, 'models', 'sentiment_analyzer')
+        if os.path.exists(sentiment_model_path):
             try:
-                if os.path.exists(path):
-                    if os.path.exists(os.path.join(path, 'pipeline.pkl')):
-                        # Use the EnhancedSentimentAnalyzer class to load the model
-                        sentiment_model = EnhancedSentimentAnalyzer.load_model(path)
-                        if sentiment_model:
-                            logger.info(f"Enhanced sentiment analyzer loaded from {path}")
-                            enhanced_models = True
-                            break
+                sentiment_model = EnhancedSentimentAnalyzer.load_model(sentiment_model_path)
+                if sentiment_model:
+                    logger.info(f"Enhanced sentiment analyzer loaded from {sentiment_model_path}")
+                    enhanced_models = True
             except Exception as e:
-                logger.error(f"Error trying to load sentiment model from {path}: {e}")
-                continue
-        
-        # If model wasn't found in standard locations, try to import it from module
+                logger.error(f"Error loading sentiment model from {sentiment_model_path}: {e}")
+                sentiment_model = None
+        else:
+            logger.error(f"Sentiment analyzer model directory not found at {sentiment_model_path}")
+            sentiment_model = None
+
         if sentiment_model is None:
-            try:
-                sys.path.append(os.path.join(project_root, 'models'))
-                from models.sentiment_analyzer import EnhancedSentimentAnalyzer
-                
-                # Try to find model dir one more time
-                for root, dirs, files in os.walk(project_root):
-                    if 'sentiment_analyzer' in dirs:
-                        model_dir = os.path.join(root, 'sentiment_analyzer')
-                        if os.path.exists(os.path.join(model_dir, 'pipeline.pkl')):
-                            sentiment_model = EnhancedSentimentAnalyzer.load_model(model_dir)
-                            if sentiment_model:
-                                logger.info(f"Sentiment model loaded via module from {model_dir}")
-                                enhanced_models = True
-                                break
-            except Exception as e:
-                logger.error(f"Error importing sentiment analyzer module: {e}")
-        
-        # Fallback to simple analyzer if all else fails
-        if sentiment_model is None:
-            logger.warning("Sentiment model not found, using simple analyzer")
-            sentiment_model = SimpleSentimentAnalyzer()
+            logger.warning("Sentiment analysis will be skipped due to missing model")
     except Exception as e:
         logger.error(f"Error loading models: {e}")
         category_model = SimpleCategoryClassifier()
-        sentiment_model = SimpleSentimentAnalyzer()
+        sentiment_model = EnhancedSentimentAnalyzer()
     
     display_file = os.path.join(project_root, 'data', 'display', 'all_articles.json')
     
@@ -1115,53 +960,17 @@ def load_data():
                 logger.info("Applying sentiment model to articles...")
                 texts = articles_df['Content'].fillna('').tolist()
                 
-                sentiment_ids = sentiment_model.predict(texts)
-                articles_df['sentiment'] = [sentiment_model.labels[sid] for sid in sentiment_ids]
+                sentiment_results = [sentiment_model.explain_prediction(text) for text in texts]
                 
-                logger.info("Calculating sentiment scores...")
-                features = sentiment_model.extract_sentiment_features(texts)
+                articles_df['sentiment'] = [res['predicted_sentiment'] for res in sentiment_results]
+                articles_df['sentiment_score'] = [res['sentiment_score'] for res in sentiment_results]
+                articles_df['sentiment_reason'] = [res['reason'] for res in sentiment_results]
                 
-                for i, sid in enumerate(sentiment_ids):
-                    sentiment = sentiment_model.labels[sid]
-                    if sentiment == 'positive':
-                        score = 8.0
-                    elif sentiment == 'negative':
-                        score = 2.0
-                    else:
-                        score = 5.0
-                    
-                    score += random.uniform(-0.5, 0.5)  # Add some randomness
-                    articles_df.loc[i, 'sentiment_score'] = score
-                
-                if hasattr(features, 'iloc'):
-                    articles_df['positive_word_count'] = features['positive_word_count'].tolist()
-                    articles_df['negative_word_count'] = features['negative_word_count'].tolist()
-                    articles_df['sentiment_ratio'] = features['sentiment_ratio'].tolist()
-                else:
-                    articles_df['positive_word_count'] = features.get('positive_word_count', [0] * len(texts))
-                    articles_df['negative_word_count'] = features.get('negative_word_count', [0] * len(texts))
-                    articles_df['sentiment_ratio'] = features.get('sentiment_ratio', [1.0] * len(texts))
-                
-                articles_df['sentiment_reason'] = articles_df.apply(
-                    lambda row: f"Text obsahuje {row['positive_word_count']} pozitivních a {row['negative_word_count']} negativních slov."
-                    if 'positive_word_count' in row and 'negative_word_count' in row else "",
-                    axis=1
-                )
-                
-                articles_df['positive_words'] = [[] for _ in range(len(articles_df))]
-                articles_df['negative_words'] = [[] for _ in range(len(articles_df))]
-                
-                if hasattr(sentiment_model, 'explain_prediction') and callable(getattr(sentiment_model, 'explain_prediction')):
-                    logger.info("Using enhanced sentiment explanation...")
-                    for i, text in enumerate(texts):
-                        if len(text) > 10:
-                            try:
-                                explanation = sentiment_model.explain_prediction(text)
-                                if explanation:
-                                    articles_df.at[i, 'positive_words'] = explanation.get('positive_words', [])
-                                    articles_df.at[i, 'negative_words'] = explanation.get('negative_words', [])
-                            except Exception as e:
-                                logger.error(f"Error explaining sentiment for article {i}: {e}")
+                articles_df['positive_word_count'] = [res['positive_word_count'] for res in sentiment_results] 
+                articles_df['negative_word_count'] = [res['negative_word_count'] for res in sentiment_results]
+                articles_df['sentiment_ratio'] = [res['sentiment_ratio'] for res in sentiment_results]
+                articles_df['positive_words'] = [res['positive_words'] for res in sentiment_results]
+                articles_df['negative_words'] = [res['negative_words'] for res in sentiment_results]
                 
                 logger.info("Sentiment analysis completed")
             
@@ -1236,7 +1045,7 @@ def index():
         'loaded_date': loaded_date,
         'enhanced_models': enhanced_models
     }
-    
+
     return render_template('index.html', stats=stats)
 
 @app.route('/articles')
@@ -1334,9 +1143,9 @@ def article_detail(article_id):
             else:
                 article_data['predicted_category'] = 'Zprávy'
     
-    if ('sentiment' not in article_data or 
-        pd.isna(article_data.get('sentiment')) or 
-        'sentiment_score' not in article_data or 
+    if ('sentiment' not in article_data or
+        pd.isna(article_data.get('sentiment')) or
+        'sentiment_score' not in article_data or
         pd.isna(article_data.get('sentiment_score'))):
         
         content = article_data.get('Content', '')
@@ -1344,35 +1153,7 @@ def article_detail(article_id):
         
         for key, value in sentiment_results.items():
             article_data[key] = value
-    
-    if 'sentiment_features' not in article_data or not isinstance(article_data['sentiment_features'], dict):
-        article_data['sentiment_features'] = {
-            'positive_word_count': article_data.get('positive_word_count', 0),
-            'negative_word_count': article_data.get('negative_word_count', 0),
-            'sentiment_ratio': article_data.get('sentiment_ratio', 1.0)
-        }
-    
-    if 'positive_words' not in article_data or not isinstance(article_data['positive_words'], list):
-        article_data['positive_words'] = []
-        
-    if 'negative_words' not in article_data or not isinstance(article_data['negative_words'], list):
-        article_data['negative_words'] = []
-    
-    if 'sentiment_reason' not in article_data or not article_data.get('sentiment_reason'):
-        pos_count = article_data['sentiment_features']['positive_word_count']
-        neg_count = article_data['sentiment_features']['negative_word_count']
-        
-        if article_data['sentiment'] == 'positive':
-            article_data['sentiment_reason'] = f"Text obsahuje více pozitivních slov ({pos_count}) než negativních slov ({neg_count})."
-        elif article_data['sentiment'] == 'negative':
-            article_data['sentiment_reason'] = f"Text obsahuje více negativních slov ({neg_count}) než pozitivních slov ({pos_count})."
-        else:
-            article_data['sentiment_reason'] = f"Text obsahuje vyváženou kombinaci pozitivních ({pos_count}) a negativních ({neg_count}) slov."
-    
-    if article_data.get('sentiment_score') == 5.0:
-        import random
-        offset = random.uniform(-0.5, 0.5)
-        article_data['sentiment_score'] = 5.0 + offset
+            articles_df.loc[articles_df['Id'] == article_id, key] = value
     
     return render_template('article_detail.html', article=article_data)
 

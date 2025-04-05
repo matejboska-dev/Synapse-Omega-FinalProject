@@ -1,0 +1,4 @@
+2025-04-05 21:30:43,400 - INFO - Generating Czech sentiment lexicons
+2025-04-05 21:30:43,401 - INFO - Czech sentiment lexicons created: 126 positive, 164 negative words
+2025-04-05 21:30:43,409 - INFO - Loaded 118 articles from d:\GitHub\Synapse-Omega-FinalProject\data\display\all_articles.json
+2025-04-05 21:30:43,411 - INFO - After filtering, 118 articles remain
