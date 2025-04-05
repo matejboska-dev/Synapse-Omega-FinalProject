@@ -1,0 +1,14 @@
+2025-04-05 22:48:03,270 - INFO - starting scraped data processing
+2025-04-05 22:48:03,273 - INFO - found latest scraped data file: d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:48:03,280 - INFO - loaded 25 articles from d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:48:03,282 - INFO - Text preprocessor initialized for czech language
+2025-04-05 22:48:03,283 - INFO - preprocessing article texts...
+2025-04-05 22:48:03,285 - INFO - Preprocessed 25 rows in column Title
+2025-04-05 22:48:03,352 - INFO - Preprocessed 25 rows in column Content
+2025-04-05 22:48:03,352 - INFO - preprocessing completed
+2025-04-05 22:48:03,353 - INFO - Resolved sentiment model path: d:\GitHub\Synapse-Omega-FinalProject\models\sentiment_analyzer
+2025-04-05 22:48:03,356 - ERROR - error applying models: cannot import name 'SentimentAnalyzer' from 'models.sentiment_analyzer' (unknown location)
+2025-04-05 22:48:03,375 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.csv
+2025-04-05 22:48:03,384 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.json
+2025-04-05 22:48:03,385 - ERROR - error creating display file: "['sentiment'] not in index"
+2025-04-05 22:48:03,386 - INFO - scraped data processing completed

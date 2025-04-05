@@ -1,0 +1,17 @@
+2025-04-05 22:52:05,147 - INFO - starting scraped data processing
+2025-04-05 22:52:05,151 - INFO - found latest scraped data file: d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:52:05,158 - INFO - loaded 25 articles from d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:52:05,161 - INFO - Text preprocessor initialized for czech language
+2025-04-05 22:52:05,161 - INFO - preprocessing article texts...
+2025-04-05 22:52:05,164 - INFO - Preprocessed 25 rows in column Title
+2025-04-05 22:52:05,233 - INFO - Preprocessed 25 rows in column Content
+2025-04-05 22:52:05,233 - INFO - preprocessing completed
+2025-04-05 22:52:05,234 - INFO - Resolved sentiment model path: d:\GitHub\Synapse-Omega-FinalProject\models\sentiment_analyzer
+2025-04-05 22:52:05,241 - INFO - loading sentiment analyzer...
+2025-04-05 22:52:05,241 - ERROR - error in sentiment analysis: name 'logger' is not defined
+2025-04-05 22:52:05,243 - INFO - model application completed
+2025-04-05 22:52:05,263 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.csv
+2025-04-05 22:52:05,275 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.json
+2025-04-05 22:52:05,283 - INFO - saved display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\display_articles_2025-04-05.json
+2025-04-05 22:52:05,318 - INFO - saved combined display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\all_articles.json
+2025-04-05 22:52:05,318 - INFO - scraped data processing completed

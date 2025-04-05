@@ -1,0 +1,18 @@
+2025-04-05 22:55:46,020 - INFO - starting scraped data processing
+2025-04-05 22:55:46,023 - INFO - found latest scraped data file: d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:55:46,029 - INFO - loaded 25 articles from d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:55:46,032 - INFO - Text preprocessor initialized for czech language
+2025-04-05 22:55:46,032 - INFO - preprocessing article texts...
+2025-04-05 22:55:46,034 - INFO - Preprocessed 25 rows in column Title
+2025-04-05 22:55:46,104 - INFO - Preprocessed 25 rows in column Content
+2025-04-05 22:55:46,104 - INFO - preprocessing completed
+2025-04-05 22:55:46,105 - INFO - Resolved sentiment model path: d:\GitHub\Synapse-Omega-FinalProject\models\sentiment_analyzer
+2025-04-05 22:55:46,112 - INFO - loading sentiment analyzer...
+2025-04-05 22:55:47,297 - INFO - applying sentiment analysis...
+2025-04-05 22:55:47,300 - ERROR - error in sentiment analysis: Length of values (1) does not match length of index (25)
+2025-04-05 22:55:47,301 - INFO - model application completed
+2025-04-05 22:55:47,320 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.csv
+2025-04-05 22:55:47,329 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.json
+2025-04-05 22:55:47,341 - INFO - saved display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\display_articles_2025-04-05.json
+2025-04-05 22:55:47,383 - INFO - saved combined display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\all_articles.json
+2025-04-05 22:55:47,384 - INFO - scraped data processing completed

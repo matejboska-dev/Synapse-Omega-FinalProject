@@ -48,6 +48,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+model_dir = r'D:\GitHub\Synapse-Omega-FinalProject\models\sentiment_analyzer'
+
 
 articles_df = None
 category_model = None
@@ -842,7 +844,7 @@ def load_data():
     global articles_df, category_model, sentiment_model, loaded_date, enhanced_models
     
     try:
-        category_model_path = os.path.join(project_root, 'models', 'category_classifier')
+        
         if os.path.exists(category_model_path):
             try:
                 import pickle
@@ -872,10 +874,10 @@ def load_data():
                 enhanced_models = True
             except Exception as e:
                 logger.error(f"Error loading category model: {e}")
-                category_model = SimpleCategoryClassifier()
+                
         else:
             logger.warning("Category model not found, using simple classifier")
-            category_model = SimpleCategoryClassifier()
+            
         
         sentiment_model_paths = [
     os.path.join(project_root, 'models', 'sentiment_analyzer'),  # Standard location

@@ -1,0 +1,19 @@
+2025-04-05 22:52:58,451 - INFO - starting scraped data processing
+2025-04-05 22:52:58,456 - INFO - found latest scraped data file: d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:52:58,464 - INFO - loaded 25 articles from d:\GitHub\Synapse-Omega-FinalProject\data\scraped\articles_20250405_174013.json
+2025-04-05 22:52:58,466 - INFO - Text preprocessor initialized for czech language
+2025-04-05 22:52:58,467 - INFO - preprocessing article texts...
+2025-04-05 22:52:58,469 - INFO - Preprocessed 25 rows in column Title
+2025-04-05 22:52:58,537 - INFO - Preprocessed 25 rows in column Content
+2025-04-05 22:52:58,538 - INFO - preprocessing completed
+2025-04-05 22:52:58,539 - INFO - Resolved sentiment model path: d:\GitHub\Synapse-Omega-FinalProject\models\sentiment_analyzer
+2025-04-05 22:52:58,547 - INFO - loading sentiment analyzer...
+2025-04-05 22:52:58,547 - ERROR - Error loading model: name 'os' is not defined
+2025-04-05 22:52:58,548 - INFO - applying sentiment analysis...
+2025-04-05 22:52:58,549 - ERROR - error in sentiment analysis: Model not trained. Must load model first.
+2025-04-05 22:52:58,550 - INFO - model application completed
+2025-04-05 22:52:58,571 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.csv
+2025-04-05 22:52:58,580 - INFO - saved processed data to d:\GitHub\Synapse-Omega-FinalProject\data\processed_scraped\processed_articles_20250405_174013.json
+2025-04-05 22:52:58,588 - INFO - saved display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\display_articles_2025-04-05.json
+2025-04-05 22:52:58,623 - INFO - saved combined display data to d:\GitHub\Synapse-Omega-FinalProject\data\display\all_articles.json
+2025-04-05 22:52:58,624 - INFO - scraped data processing completed
